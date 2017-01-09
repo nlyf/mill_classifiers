@@ -1,6 +1,6 @@
 import logging
 from model.classifier import Classifier
-from model.mill_classifier import MillClassifier
+from model.mill_classifier import MillBinary
 
 import settings
 from nltk.corpus import reuters
@@ -40,8 +40,8 @@ def main():
     file_learn = ""
     file_test = ""
     vectorizer = settings.vectorizer_word
-    classifier = MillClassifier()
-    cls = Classifier(file_learn, file_test, vectorizer, classifier, corpus=reuters, limit=None)
+    classifier = MillBinary(gen_obj_type="cut_subtraction")
+    cls = Classifier(file_learn, file_test, vectorizer, classifier, corpus=reuters, limit=8)
     cls.run()
     cls.print_results("../data/temp.csv")
 if __name__ == '__main__':

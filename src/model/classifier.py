@@ -7,13 +7,15 @@ import pandas as pd
 import json
 import settings
 import logging
-
+from sklearn.preprocessing import LabelEncoder
 logger = logging.getLogger(__name__)
 
 
 class Classifier:
     def __init__(self, file_name_learn, file_name_test, vectorizer, classifier,
-                 limit=None, field='data', y_field='target', corpus=None):
+                 limit=None, field='data', y_field='target', corpus=None,
+                 n_classes=2):
+        # NOTE: just for binary problem right now
         self.data_learn = pd.DataFrame()
         self.data_test = pd.DataFrame()
 
@@ -21,21 +23,34 @@ class Classifier:
             data = []
             target = []
             name = []
-            for cls in corpus.categories():
-                docs = corpus.fileids(cls)
+
+            if n_classes:
+                classes = corpus.categories()[:n_classes]
+            else:
+                classes = corpus.categories()
+            for cls in classes:
+                if limit:
+                    docs = [d for d in corpus.fileids(cls) if d.startswith("train")][:limit]
+                    docs += [d for d in corpus.fileids(cls) if d.startswith("test")][:limit]
+                else:
+                    docs = corpus.fileids(cls)
                 for d in docs:
                     name.append(d)
                     data.append(corpus.raw(d))
                     target.append(cls)
             df = pd.DataFrame({"name": name, "data": data, "target": target})
-            self.data_learn = df[df.name.str.startswith("train")][:limit]
-            self.data_test = df[df.name.str.startswith("test")][:limit]
+
+            self.data_learn = df[df.name.str.startswith("train")]
+            self.data_test = df[df.name.str.startswith("test")]
             self.file_name_learn = ""
             self.file_name_test = ""
 
         elif file_name_learn:
             self.file_name_learn = file_name_learn
-            self.file_name_test = file_name_test
+            self.data_learn = pd.read_csv(file_name_learn)
+            if file_name_test:
+                self.file_name_test = file_name_test
+                self.data_test = pd.read_csv(file_name_test)
         self.vectorizer = vectorizer
         self.classifier = classifier
         self.result = pd.DataFrame()
@@ -43,6 +58,8 @@ class Classifier:
         self.y_field = y_field
 
     def preprocess(self, df):
+        df["y"] = LabelEncoder().fit_transform(df.target)
+
         return df
 
     def learn(self):
@@ -51,7 +68,10 @@ class Classifier:
         x = self.vectorizer.fit_transform(self.data_learn[self.field])
         logger.debug("#n_features: {}".format(len(self.vectorizer.vocabulary_)))
 
-        y = self.data_learn[self.y_field]
+        # x_pos = self.vectorizer.fit_transform(self.data_learn[self.data_learn.y == 1][self.field])
+        # x_neg = self.vectorizer.fit_transform(self.data_learn[self.data_learn.y == 0][self.field])
+
+        y = self.data_learn['y']
         self.classifier.fit(x, y)
         logger.debug("learning done")
 
