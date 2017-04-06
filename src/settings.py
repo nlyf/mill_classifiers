@@ -1,6 +1,6 @@
 import string
 from nltk import word_tokenize
-from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.ensemble import RandomForestClassifier
 
 table_spaces = str.maketrans(string.punctuation, ' ' * len(string.punctuation))
@@ -37,6 +37,8 @@ def tokenize(text):
 
 
 # vectorizers
+vec_count = CountVectorizer()
+
 vectorizer_word = TfidfVectorizer(
     ngram_range=(1, 3),
     analyzer='word',

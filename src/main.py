@@ -39,9 +39,9 @@ def main():
     # collection_stats()
     file_learn = ""
     file_test = ""
-    vectorizer = settings.vectorizer_word
-    classifier = MillBinary(gen_obj_type="cut_subtraction")
-    cls = Classifier(file_learn, file_test, vectorizer, classifier, corpus=reuters, limit=8)
+    vectorizer = settings.vec_count
+    classifier = MillBinary(gen_obj_type="division")
+    cls = Classifier(file_learn, file_test, vectorizer, classifier, corpus=reuters)
     cls.run()
     cls.print_results("../data/temp.csv")
 if __name__ == '__main__':

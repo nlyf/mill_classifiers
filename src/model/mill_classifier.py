@@ -10,7 +10,7 @@ from sklearn.dummy import DummyClassifier
 from sklearn.linear_model import logistic
 
 
-class MillClassifier():
+class MillClassifier:
     """
     Base class for only binary classification problems
     """
@@ -39,14 +39,10 @@ class MillClassifier():
         return self.y_[closest]
 
 
-
-
-
-
 class MillBinary(BaseEstimator, ClassifierMixin):
-    def __init__(self, gen_obj_type='subtraction',cls_method='simple'):
+    def __init__(self, gen_obj_type='subtraction', cls_method='simple'):
         self.gen_obj_type = gen_obj_type  # variant of calculating generic objects
-        self.cls_method = cls_method  #classification method to predict class (rule based)
+        self.cls_method = cls_method  # classification method to predict class (rule based)
 
     def fit(self, X, y):
 
@@ -66,6 +62,7 @@ class MillBinary(BaseEstimator, ClassifierMixin):
         self.df_neg = csr_matrix((1, X.shape[1]))
 
         for x_i, y_i in zip(X, y):
+
             if y_i == 0:
                 self.df_neg += x_i
             elif y_i == 1:
@@ -78,6 +75,9 @@ class MillBinary(BaseEstimator, ClassifierMixin):
         elif self.gen_obj_type == 'cut_subtraction':
             self._pos = self.cut_subtraction(self.df_pos, self.df_neg)
             self._neg = self.cut_subtraction(self.df_neg, self.df_pos)
+        elif self.gen_obj_type == 'division':
+            self._pos = self.df_pos / self.df_neg
+            self._neg = self.df_neg / self.df_pos
         # Return the classifier
         return self
 
@@ -96,13 +96,13 @@ class MillBinary(BaseEstimator, ClassifierMixin):
             if self.cls_method == 'simple':
                 c_pos = x.multiply(self._pos).nnz
                 c_neg = x.multiply(self._neg).nnz
-                if c_pos >= c_neg:
+                if c_pos > c_neg:
                     y[k] = 1
                 elif c_pos < c_neg:
                     y[k] = 0
                 else:
                     y[k] = -1
-        return self.y_[y]
+        return y
 
     @staticmethod
     def cut_subtraction(A, B):

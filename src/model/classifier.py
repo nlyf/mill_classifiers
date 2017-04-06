@@ -26,8 +26,12 @@ class Classifier:
 
             if n_classes:
                 classes = corpus.categories()[:n_classes]
+                # classes = ['fuel','trade']
             else:
                 classes = corpus.categories()
+
+            # TODO: remove hardcore test string
+            classes = ['yen', 'zinc']
             for cls in classes:
                 if limit:
                     docs = [d for d in corpus.fileids(cls) if d.startswith("train")][:limit]
