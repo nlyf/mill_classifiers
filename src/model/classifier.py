@@ -8,6 +8,7 @@ import json
 import settings
 import logging
 from sklearn.preprocessing import LabelEncoder
+
 logger = logging.getLogger(__name__)
 
 
@@ -34,8 +35,10 @@ class Classifier:
             classes = ['yen', 'zinc']
             for cls in classes:
                 if limit:
-                    docs = [d for d in corpus.fileids(cls) if d.startswith("train")][:limit]
-                    docs += [d for d in corpus.fileids(cls) if d.startswith("test")][:limit]
+                    docs = [d for d in corpus.fileids(cls) if
+                            d.startswith("train")][:limit]
+                    docs += [d for d in corpus.fileids(cls) if
+                             d.startswith("test")][:limit]
                 else:
                     docs = corpus.fileids(cls)
                 for d in docs:
@@ -84,9 +87,13 @@ class Classifier:
         x = self.vectorizer.transform(self.data_test[self.field])
         y = self.classifier.predict(x)
 
-        self.result = pd.DataFrame({self.y_field: y,
-                                    self.field: self.data_test[self.field].apply(lambda x: x.split('\n')[0])},
-                                   index=self.data_test.index)
+        self.result = pd.DataFrame(
+            {
+                self.y_field: y,
+                self.field: self.data_test[self.field].apply(
+                    lambda x: x.split('\n')[0])},
+            index=self.data_test.index
+        )
         logger.debug("#predictions:{}".format(len(self.result)))
 
     def run(self):
@@ -101,7 +108,9 @@ class Classifier:
         r = self.vectorizer.get_params(deep=False)
         return dict(name=settings.vectorizer_names[self.vectorizer],
                     analyzer=r["analyzer"], ngram_range=str(r["ngram_range"]),
-                    tokenizer=str(r["tokenizer"]), preprocessor=str(r["preprocessor"]))
+                    tokenizer=str(r["tokenizer"]),
+                    preprocessor=str(r["preprocessor"]))
+
     @property
     def classifier_name(self):
         # TODDO add get_params for Mill classifier
@@ -128,4 +137,3 @@ class Classifier:
         else:
             print(self)
             print(self.result)
-

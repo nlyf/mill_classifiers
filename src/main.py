@@ -40,7 +40,7 @@ def main():
     file_learn = ""
     file_test = ""
     vectorizer = settings.vec_count
-    classifier = MillBinary(gen_obj_type="division")
+    classifier = MillBinary(gen_obj_type="division", cls_method='weight')
     cls = Classifier(file_learn, file_test, vectorizer, classifier, corpus=reuters)
     cls.run()
     cls.print_results("../data/temp.csv")

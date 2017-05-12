@@ -76,12 +76,16 @@ class MillBinary(BaseEstimator, ClassifierMixin):
             self._pos = self.cut_subtraction(self.df_pos, self.df_neg)
             self._neg = self.cut_subtraction(self.df_neg, self.df_pos)
         elif self.gen_obj_type == 'division':
-            self._pos = self.df_pos / self.df_neg
-            self._neg = self.df_neg / self.df_pos
-        # Return the classifier
+            self._pos = self.division(self.df_pos, self.df_neg)
+            self._neg = self.division(self.df_neg, self.df_pos)
+            # self._pos = self.df_pos / self.df_neg
+            # self._neg = self.df_neg / self.df_pos
+
         return self
 
     def predict(self, X):
+        # TODO: cls_method == 'simple' and gen_obj_type == 'division' then error
+        # in counting union
 
         # Check is fit had been called
         check_is_fitted(self, ['X_', 'y_'])
@@ -102,6 +106,16 @@ class MillBinary(BaseEstimator, ClassifierMixin):
                     y[k] = 0
                 else:
                     y[k] = -1
+
+            if self.cls_method == 'weight':
+                c_pos = x.multiply(self._pos).nnz
+                c_neg = x.multiply(self._neg).nnz
+                if c_pos > c_neg:
+                    y[k] = 1
+                elif c_pos < c_neg:
+                    y[k] = 0
+                else:
+                    y[k] = -1
         return y
 
     @staticmethod
@@ -114,6 +128,19 @@ class MillBinary(BaseEstimator, ClassifierMixin):
         C = A - B
         C[C < 0] = 0
         return C
+
+    @staticmethod
+    def division(A, B):
+        """
+        :param A: csr_matrix
+        :param B: csr_matrix
+        :return: csr_matrix division
+        """
+        with np.errstate(divide='ignore', invalid='ignore'):
+            C = np.true_divide(A, B)
+            C[C == np.inf] = 0
+            C = np.nan_to_num(C)
+            return C
 
 
 
