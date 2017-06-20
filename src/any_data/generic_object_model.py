@@ -7,7 +7,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, confusion_matrix
 import numpy as np
-from numpy.linalg import norm
 
 import logging
 
@@ -18,7 +17,7 @@ n = 5  # size of head to show
 def get_data():
     """return data"""
     data = load_breast_cancer()
-    logger.debug("loaded data: {}".format(data.DESCR[:n *10]))
+    logger.debug("loaded data: {}".format(data.DESCR[:n * 10]))
     return data
 
 
@@ -26,7 +25,7 @@ def generic_object(X, y, feature_names):
     """
     calc generic objects using statistics (std, mean)
     :param X: matrix with data values
-    :param y: target valus
+    :param y: target values
     :param feature_names: names for a feature array
     :return: mean array, std array for pos&neg and domain array
     """
@@ -62,9 +61,7 @@ def weight_vector(generics):
     :param generics: 2 row array with means of data features
     :return: feature weight vector
     """
-    x_neg_len = norm(generics.iloc[0])
-    x_pos_len = norm(generics.iloc[1])
-    vec = generics.apply(lambda x: weight_feature(x[0],x[1]))
+    vec = generics.apply(lambda x: weight_feature(x[0], x[1]))
 
     logger.debug("weights vector created \n"
                  "head of weights :\n {}".
@@ -86,10 +83,10 @@ def feature_sim_domain(test, generic, domains):
 
 def feature_sim_3sigma(test, generic, std):
     """
-    calculate feature similarity based on domain
+    calculate feature similarity based on 3 sigma
     :param test: array of examples
     :param generic: pos or neg generic object
-    :param domains: array of feature domains (max_x-min_x)
+    :param std: array of feature stds
     :return: feature similarity
     """
     sim = 3*std - abs(test - generic)
@@ -127,8 +124,8 @@ def analogy(X_test, domains, weights, generics, stds):
     :param X_test: array of examples
     :param domains:  array of feature domains (max_x-min_x)
     :param weights: feature weights array
-    :param generic: pos or neg generic object
-    :param std_generic: std for pos or neg generic object
+    :param generics: pos or neg generic object
+    :param stds: std for pos or neg generic object
     :return: measure
     """
     x_pos = generics.iloc[1]
@@ -155,11 +152,11 @@ def estimate(y_pred, y_true):
     """
     estimate results
     :param y_pred:
-    :param y_test:
+    :param y_true:
     :return:
     """
-    cm = confusion_matrix(y_pred=y_pred,y_true=y_true)
-    accuracy = accuracy_score(y_pred=y_pred,y_true=y_true)
+    cm = confusion_matrix(y_pred=y_pred, y_true=y_true)
+    accuracy = accuracy_score(y_pred=y_pred, y_true=y_true)
     logger.debug("confusion matrix: \n {} \n accuracy: {}".
                  format(cm, accuracy))
 
