@@ -136,6 +136,7 @@ def analogy(X_test, domains, weights, generics, stds):
     y_pred = [1 if x>=0 else 0 for x in _pos_measure - _neg_measure]
     return y_pred
 
+
 def estimate(y_pred, y_true):
     """
     estimate results
@@ -145,8 +146,12 @@ def estimate(y_pred, y_true):
     """
     cm = confusion_matrix(y_pred=y_pred,y_true=y_true)
     accuracy = accuracy_score(y_pred=y_pred,y_true=y_true)
-    logger.debug("confusion matrix: {} \n accuracy: {}".
-                 format(cm,accuracy))
+    logger.debug("confusion matrix: \n {} \n accuracy: {}".
+                 format(cm, accuracy))
+
+    return accuracy
+
+
 def main():
     data = get_data()
     X, y = data.data, data.target
@@ -169,7 +174,8 @@ def main():
     y_pred = analogy(X_test, domains, weights, generics, stds)
 
 #   estimate
-    estimate(y_pred, y_test)
+    acc = estimate(y_pred, y_test)
+    return acc
 
 
 if __name__ == '__main__':
