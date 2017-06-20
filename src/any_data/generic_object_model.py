@@ -14,8 +14,9 @@ import logging
 logger = logging.getLogger(__name__)
 n = 5  # size of head to show
 
+
 def get_data():
-    """return data frame"""
+    """return data"""
     data = load_breast_cancer()
     logger.debug("loaded data: {}".format(data.DESCR[:n *10]))
     return data
@@ -71,7 +72,7 @@ def weight_vector(generics):
     return vec
 
 
-def feature_similarity(test, generic, domains):
+def feature_sim_domain(test, generic, domains):
     """
     calculate feature similarity based on domain
     :param test: array of examples
@@ -80,6 +81,19 @@ def feature_similarity(test, generic, domains):
     :return: feature similarity
     """
     sim = domains - abs(test - generic)
+    return sim
+
+
+def feature_sim_3sigma(test, generic, std):
+    """
+    calculate feature similarity based on domain
+    :param test: array of examples
+    :param generic: pos or neg generic object
+    :param domains: array of feature domains (max_x-min_x)
+    :return: feature similarity
+    """
+    sim = 3*std - abs(test - generic)
+    sim[sim < 0] = 0
     return sim
 
 
@@ -93,7 +107,7 @@ def measure(X_test, domains, weights, generic, std_generic):
     :param std_generic: std for pos or neg generic object
     :return: measure
     """
-    similarity_vec = np.apply_along_axis(feature_similarity,
+    similarity_vec = np.apply_along_axis(feature_sim_domain,
                                          1,
                                          X_test, generic, domains)
 
@@ -133,7 +147,7 @@ def analogy(X_test, domains, weights, generics, stds):
                  "pos: \n {} \n"
                  "neg: \n {} ".format(_pos_measure[:2*n], _neg_measure[:2*n]))
 
-    y_pred = [1 if x>=0 else 0 for x in _pos_measure - _neg_measure]
+    y_pred = [1 if x >= 0 else 0 for x in _pos_measure - _neg_measure]
     return y_pred
 
 
