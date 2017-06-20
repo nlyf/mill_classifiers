@@ -5,6 +5,7 @@ import pandas as pd
 from sklearn.datasets import load_breast_cancer
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score, confusion_matrix
 import numpy as np
 from numpy.linalg import norm
 
@@ -34,10 +35,10 @@ def generic_object(X, y, feature_names):
     means = df.groupby('y').apply(lambda x: x[feature_names].mean())
     stds = df.groupby('y').apply(lambda x: x[feature_names].std())
     # domains for all or for pos and neg separately
-    # maxs = df.groupby('y').apply(lambda x: x[feature_names].max())
-    # mins = df.groupby('y').apply(lambda x: x[feature_names].min())
-    maxs = df[feature_names].max()
-    mins = df[feature_names].min()
+    maxs = df.groupby('y').apply(lambda x: x[feature_names].max())
+    mins = df.groupby('y').apply(lambda x: x[feature_names].min())
+    # maxs = df[feature_names].max()
+    # mins = df[feature_names].min()
     domains = maxs - mins
 
     logger.debug('generic object created\n '
@@ -49,9 +50,9 @@ def generic_object(X, y, feature_names):
     return means, stds, domains
 
 
-def weight_feature(x_neg, x_pos, x_neg_len, x_pos_len):
+def weight_feature(x_neg, x_pos):
 
-    return (x_pos - x_neg)**2 / (x_neg_len * x_pos_len)
+    return (x_pos - x_neg)**2 / abs(x_pos * x_neg)
 
 
 def weight_vector(generics):
@@ -62,10 +63,8 @@ def weight_vector(generics):
     """
     x_neg_len = norm(generics.iloc[0])
     x_pos_len = norm(generics.iloc[1])
-    vec = generics.apply(lambda x: weight_feature(x[0],
-                                                    x[1],
-                                                    x_neg_len,
-                                                    x_pos_len))
+    vec = generics.apply(lambda x: weight_feature(x[0],x[1]))
+
     logger.debug("weights vector created \n"
                  "head of weights :\n {}".
                  format(vec[:n]))
@@ -124,13 +123,30 @@ def analogy(X_test, domains, weights, generics, stds):
     std_pos = stds.iloc[1]
     std_neg = stds.iloc[0]
 
-    _pos_measure = measure(X_test, domains, weights, x_pos, std_pos)
-    _neg_measure = measure(X_test, domains, weights, x_neg, std_neg)
+    domains_pos = domains.iloc[1]
+    domains_neg = domains.iloc[0]
+
+    _pos_measure = measure(X_test, domains_pos, weights, x_pos, std_pos)
+    _neg_measure = measure(X_test, domains_neg, weights, x_neg, std_neg)
 
     logger.debug("Positive & negative measures calculated\n"
                  "pos: \n {} \n"
-                 "neg: \n {} ".format(_pos_measure[:n], _neg_measure[:n]))
+                 "neg: \n {} ".format(_pos_measure[:2*n], _neg_measure[:2*n]))
 
+    y_pred = [1 if x>=0 else 0 for x in _pos_measure - _neg_measure]
+    return y_pred
+
+def estimate(y_pred, y_true):
+    """
+    estimate results
+    :param y_pred:
+    :param y_test:
+    :return:
+    """
+    cm = confusion_matrix(y_pred=y_pred,y_true=y_true)
+    accuracy = accuracy_score(y_pred=y_pred,y_true=y_true)
+    logger.debug("confusion matrix: {} \n accuracy: {}".
+                 format(cm,accuracy))
 def main():
     data = get_data()
     X, y = data.data, data.target
@@ -150,7 +166,10 @@ def main():
 
     # analogy
     logger.debug("Analogy started")
-    analogy(X_test, domains, weights, generics, stds)
+    y_pred = analogy(X_test, domains, weights, generics, stds)
+
+#   estimate
+    estimate(y_pred, y_test)
 
 
 if __name__ == '__main__':
