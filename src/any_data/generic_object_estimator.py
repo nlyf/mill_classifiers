@@ -45,7 +45,7 @@ class GOBIM(BaseEstimator, ClassifierMixin):
         self.generics = pd.DataFrame()
         self.stds = pd.DataFrame()
         self.domains = pd.DataFrame()
-        self._n = 5
+        self._n = 5  # size of head to show
 
     def weight_vector(self, weight_feature_function=weight_feature):
         """
@@ -123,10 +123,7 @@ class GOBIM(BaseEstimator, ClassifierMixin):
         self.y_ = y
 
         self.generic_object(X, y, self._feature_names)
-
         self.weight_vector()
-
-        # Return the classifier
         return self
 
     def predict(self, X):
@@ -162,5 +159,4 @@ class GOBIM(BaseEstimator, ClassifierMixin):
                                           _neg_measure[:2 * self._n]))
 
         y_pred = [1 if x >= 0 else 0 for x in _pos_measure - _neg_measure]
-
         return y_pred

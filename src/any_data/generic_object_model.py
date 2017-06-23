@@ -5,13 +5,11 @@ from sklearn import datasets
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, confusion_matrix
 
+from any_data import generic_object_estimator as goe
 
 import logging
 
 logger = logging.getLogger(__name__)
-n = 5  # size of head to show
-
-from any_data import generic_object_estimator as goe
 
 
 def get_data():
@@ -57,4 +55,4 @@ if __name__ == '__main__':
     logging.basicConfig(
         format="%(asctime)s %(levelname)s %(module)s %(message)s",
         level=10)
-    main_GOBIM()
+    main_gobim()
