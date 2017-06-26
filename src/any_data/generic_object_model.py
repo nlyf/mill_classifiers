@@ -14,9 +14,9 @@ logger = logging.getLogger(__name__)
 
 def get_data():
     """return data"""
-    data = datasets.load_breast_cancer()
-    # data = datasets.load_iris()
-    logger.debug("loaded data: {}".format(data.DESCR[:n * 10]))
+    # data = datasets.load_breast_cancer()
+    data = datasets.load_iris()
+    logger.debug("loaded data: {}".format(data.DESCR[5 * 10]))
     return data
 
 

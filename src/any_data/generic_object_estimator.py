@@ -1,3 +1,4 @@
+import itertools
 import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator, ClassifierMixin
@@ -41,22 +42,27 @@ class GOBIM(BaseEstimator, ClassifierMixin):
 
     def __init__(self, feature_names):
         self._feature_names = feature_names
-        self._weights = pd.DataFrame()
+        self._weights = None
         self.generics = pd.DataFrame()
         self.stds = pd.DataFrame()
         self.domains = pd.DataFrame()
         self._n = 5  # size of head to show
+        self.cls = None
 
     def weight_vector(self, weight_feature_function=weight_feature):
         """
         calculate a vector of weights using weight feature function
-        generics: 2 row array with means of data features
+        generics: n row array with means (for many class problem)
         :return: feature weight vector
         """
-        self._weights = self.generics.apply(
-            lambda x: weight_feature_function(
-                x[0],
-                x[1]))
+        # calc up/down triangle matrix using itertools.combinations
+        indexes = itertools.combinations(list(range(self.cls)), 2)
+
+        for i, j in indexes:
+            self._weights[i][j] = self.generics.apply(
+                lambda x: weight_feature_function(
+                    x[i],
+                    x[j]))
 
         logger.debug("weights vector created \n"
                      "head of weights :\n {}".
@@ -81,13 +87,13 @@ class GOBIM(BaseEstimator, ClassifierMixin):
 
         _std_generic = 1 / std_generic
 
-        positive_measures = np.apply_along_axis(
+        _measures = np.apply_along_axis(
             (lambda x, y, z: sum(x * y * z)),
             1,
             similarity_vec,
             weights, _std_generic)
 
-        return positive_measures
+        return _measures
 
     def generic_object(self, X, y, feature_names):
         """
@@ -106,6 +112,11 @@ class GOBIM(BaseEstimator, ClassifierMixin):
         maxs = df.groupby('y').apply(lambda x: x[feature_names].max())
         mins = df.groupby('y').apply(lambda x: x[feature_names].min())
         self.domains = maxs - mins
+
+        self.cls = len(self.generics)
+        self._weights = np.ones(shape=(self.cls,
+                                        self.cls,
+                                        len(self._feature_names)))
 
         logger.debug('generic object created\n '
                      'head of means: \n {}, '
@@ -148,15 +159,23 @@ class GOBIM(BaseEstimator, ClassifierMixin):
         domains_pos = self.domains.iloc[1]
         domains_neg = self.domains.iloc[0]
 
-        _pos_measure = self.measure(X, domains_pos, self._weights, x_pos,
-                                    std_pos)
-        _neg_measure = self.measure(X, domains_neg, self._weights, x_neg,
-                                    std_neg)
+        measures = np.zeros(self.cls)
 
-        logger.debug("Positive & negative measures calculated\n"
-                     "pos: \n {} \n"
-                     "neg: \n {} ".format(_pos_measure[:2 * self._n],
-                                          _neg_measure[:2 * self._n]))
+        for i in range(self.cls):
+            measures[i] = self.measure(X, self.domains.iloc[i],
+                                       self._weights[i],
+                                       self.generics.iloc[i],
+                                       self.stds.iloc[i]
+                                       )
+        # _pos_measure = self.measure(X, domains_pos, self._weights, x_pos,
+        #                             std_pos)
+        # _neg_measure = self.measure(X, domains_neg, self._weights, x_neg,
+        #                             std_neg)
+        #
+        # logger.debug("Positive & negative measures calculated\n"
+        #              "pos: \n {} \n"
+        #              "neg: \n {} ".format(_pos_measure[:2 * self._n],
+        #                                   _neg_measure[:2 * self._n]))
 
-        y_pred = [1 if x >= 0 else 0 for x in _pos_measure - _neg_measure]
-        return y_pred
+        # y_pred = [1 if x >= 0 else 0 for x in _pos_measure - _neg_measure]
+        # return y_pred
