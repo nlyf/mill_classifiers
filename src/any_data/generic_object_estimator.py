@@ -115,8 +115,8 @@ class GOBIM(BaseEstimator, ClassifierMixin):
 
         self.cls = len(self.generics)
         self._weights = np.ones(shape=(self.cls,
-                                        self.cls,
-                                        len(self._feature_names)))
+                                       self.cls,
+                                       len(self._feature_names)))
 
         logger.debug('generic object created\n '
                      'head of means: \n {}, '
@@ -140,7 +140,7 @@ class GOBIM(BaseEstimator, ClassifierMixin):
     def predict(self, X):
         """
         predict labels for an array of test examples
-        :param X_test: array of examples
+        :param X: array of examples
         :return: measure
         """
         logger.debug("Analogy...")
@@ -150,15 +150,6 @@ class GOBIM(BaseEstimator, ClassifierMixin):
         # Input validation
         X = check_array(X)
 
-        x_pos = self.generics.iloc[1]
-        x_neg = self.generics.iloc[0]
-
-        std_pos = self.stds.iloc[1]
-        std_neg = self.stds.iloc[0]
-
-        domains_pos = self.domains.iloc[1]
-        domains_neg = self.domains.iloc[0]
-
         measures = np.zeros(self.cls)
 
         for i in range(self.cls):
@@ -167,15 +158,15 @@ class GOBIM(BaseEstimator, ClassifierMixin):
                                        self.generics.iloc[i],
                                        self.stds.iloc[i]
                                        )
-        # _pos_measure = self.measure(X, domains_pos, self._weights, x_pos,
-        #                             std_pos)
-        # _neg_measure = self.measure(X, domains_neg, self._weights, x_neg,
-        #                             std_neg)
-        #
-        # logger.debug("Positive & negative measures calculated\n"
-        #              "pos: \n {} \n"
-        #              "neg: \n {} ".format(_pos_measure[:2 * self._n],
-        #                                   _neg_measure[:2 * self._n]))
+            # _pos_measure = self.measure(X, domains_pos, self._weights, x_pos,
+            #                             std_pos)
+            # _neg_measure = self.measure(X, domains_neg, self._weights, x_neg,
+            #                             std_neg)
+            #
+            # logger.debug("Positive & negative measures calculated\n"
+            #              "pos: \n {} \n"
+            #              "neg: \n {} ".format(_pos_measure[:2 * self._n],
+            #                                   _neg_measure[:2 * self._n]))
 
-        # y_pred = [1 if x >= 0 else 0 for x in _pos_measure - _neg_measure]
-        # return y_pred
+            # y_pred = [1 if x >= 0 else 0 for x in _pos_measure - _neg_measure]
+            # return y_pred
