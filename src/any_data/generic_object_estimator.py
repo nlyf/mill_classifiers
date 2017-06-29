@@ -81,9 +81,16 @@ class GOBIM(BaseEstimator, ClassifierMixin):
         :param feature_sim_func: feature similarity function
         :return: measure
         """
-        similarity_vec = np.apply_along_axis(feature_sim_func,
-                                             1,
-                                             X_test, generic, domains)
+        if feature_sim_func == feature_sim_3sigma:
+            similarity_vec = np.apply_along_axis(feature_sim_func,
+                                                 1,
+                                                 X_test, generic, std_generic)
+        elif feature_sim_func == feature_sim_domain:
+            similarity_vec = np.apply_along_axis(feature_sim_func,
+                                                 1,
+                                                 X_test, generic, domains)
+        else:
+            return
 
         _std_generic = 1 / std_generic
 
