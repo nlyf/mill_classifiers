@@ -32,7 +32,7 @@ def feature_sim_3sigma(test, generic, std):
     :param std: array of feature stds
     :return: feature similarity
     """
-    sim = 3 * std - abs(test - generic)
+    sim = 1 * std - abs(test - generic)
     sim[sim < 0] = 0
     return sim
 
