@@ -5,7 +5,7 @@ mill classifier implementation in python
 from collections import OrderedDict
 import pandas as pd
 import json
-import settings
+import conf
 import logging
 from sklearn.preprocessing import LabelEncoder
 
@@ -106,7 +106,7 @@ class Classifier:
     @property
     def vectorizer_name(self):
         r = self.vectorizer.get_params(deep=False)
-        return dict(name=settings.vectorizer_names[self.vectorizer],
+        return dict(name=conf.vectorizer_names[self.vectorizer],
                     analyzer=r["analyzer"], ngram_range=str(r["ngram_range"]),
                     tokenizer=str(r["tokenizer"]),
                     preprocessor=str(r["preprocessor"]))

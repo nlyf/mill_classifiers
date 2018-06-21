@@ -2,7 +2,7 @@ import logging
 from model.classifier import Classifier
 from model.mill_classifier import MillBinary
 
-import settings
+import conf
 from nltk.corpus import reuters
 
 logger = logging.getLogger(__name__)
@@ -39,7 +39,7 @@ def main():
     # collection_stats()
     file_learn = ""
     file_test = ""
-    vectorizer = settings.vec_count
+    vectorizer = conf.vec_count
     classifier = MillBinary(gen_obj_type="division", cls_method='weight')
     cls = Classifier(file_learn, file_test, vectorizer, classifier, corpus=reuters)
     cls.run()
