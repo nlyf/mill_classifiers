@@ -78,8 +78,6 @@ class MillBinary(BaseEstimator, ClassifierMixin):
         elif self.gen_obj_type == 'division':
             self._pos = self.division(self.df_pos, self.df_neg)
             self._neg = self.division(self.df_neg, self.df_pos)
-            # self._pos = self.df_pos / self.df_neg
-            # self._neg = self.df_neg / self.df_pos
 
         return self
 

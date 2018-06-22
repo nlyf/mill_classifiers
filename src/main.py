@@ -3,47 +3,31 @@ from model.classifier import Classifier
 from model.mill_classifier import MillBinary
 
 import settings
+import utils
+import pandas as pd
 from nltk.corpus import reuters
 
 logger = logging.getLogger(__name__)
 
-
-def collection_stats():
-    # List of documents
-    documents = reuters.fileids()
-    print(str(len(documents)) + " documents")
-
-    train_docs = list(filter(lambda doc: doc.startswith("train"), documents))
-    print(str(len(train_docs)) + " total train documents")
-
-    test_docs = list(filter(lambda doc: doc.startswith("test"), documents))
-    print(str(len(test_docs)) + " total test documents")
-
-    # List of categories
-    categories = reuters.categories()
-    print(str(len(categories)) + " categories")
-
-    # Documents in a category
-    category_docs = reuters.fileids("acq")
-
-    # Words for a document
-    document_id = category_docs[0]
-    document_words = reuters.words(category_docs[0])
-    print(document_words)
-
-    # Raw document
-    print(reuters.raw(document_id))
+from sklearn.preprocessing import LabelEncoder
 
 
 def main():
     # collection_stats()
-    file_learn = ""
-    file_test = ""
+
     vectorizer = settings.vec_count
-    classifier = MillBinary(gen_obj_type="division", cls_method='weight')
-    cls = Classifier(file_learn, file_test, vectorizer, classifier, corpus=reuters)
-    cls.run()
-    cls.print_results("../data/temp.csv")
+    classifier = MillBinary(gen_obj_type="cut_subtraction", cls_method='simple')
+
+    df_dataset = utils.corpus_dataset(corpus=reuters, classes=['earn', 'sugar'])
+    df_dataset['y_true'] = LabelEncoder().fit_transform(df_dataset['y_true'])
+    df_dataset_test = df_dataset[df_dataset['test_learn'] == 'test']
+    df_dataset_learn = df_dataset[df_dataset['test_learn'] != 'test']
+
+    cls = Classifier(df_dataset_learn, df_dataset_test, vectorizer, classifier)
+    # cls.run()
+    cls.cross_validate()
+    y=0
+    # cls.print_results("../data/temp.csv")
 if __name__ == '__main__':
     logging.basicConfig(format="%(asctime)s %(levelname)s %(module)s %(message)s",
                         level=10)

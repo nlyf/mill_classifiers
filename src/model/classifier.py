@@ -7,91 +7,65 @@ import pandas as pd
 import json
 import settings
 import logging
+from time import time
+from sklearn.metrics import classification_report, confusion_matrix, precision_score,accuracy_score,recall_score
+from sklearn.model_selection import StratifiedShuffleSplit, StratifiedKFold, KFold
+from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import LabelEncoder
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
+# TODO: make clever pipeline with item selecvtor for label binarizer
 
 class Classifier:
-    def __init__(self, file_name_learn, file_name_test, vectorizer, classifier,
-                 limit=None, field='data', y_field='target', corpus=None,
-                 n_classes=2):
+    def __init__(self, data_learn, data_test, vectorizer, classifier,
+                 field='data', y_field='y_true'):
         # NOTE: just for binary problem right now
-        self.data_learn = pd.DataFrame()
-        self.data_test = pd.DataFrame()
 
-        if corpus:  # transform corpus into dataframe
-            data = []
-            target = []
-            name = []
+        self.data_learn = data_learn
+        self.data_test = data_test
 
-            if n_classes:
-                classes = corpus.categories()[:n_classes]
-                # classes = ['fuel','trade']
-            else:
-                classes = corpus.categories()
-
-            # TODO: remove hardcore test string
-            classes = ['yen', 'zinc']
-            for cls in classes:
-                if limit:
-                    docs = [d for d in corpus.fileids(cls) if
-                            d.startswith("train")][:limit]
-                    docs += [d for d in corpus.fileids(cls) if
-                             d.startswith("test")][:limit]
-                else:
-                    docs = corpus.fileids(cls)
-                for d in docs:
-                    name.append(d)
-                    data.append(corpus.raw(d))
-                    target.append(cls)
-            df = pd.DataFrame({"name": name, "data": data, "target": target})
-
-            self.data_learn = df[df.name.str.startswith("train")]
-            self.data_test = df[df.name.str.startswith("test")]
-            self.file_name_learn = ""
-            self.file_name_test = ""
-
-        elif file_name_learn:
-            self.file_name_learn = file_name_learn
-            self.data_learn = pd.read_csv(file_name_learn)
-            if file_name_test:
-                self.file_name_test = file_name_test
-                self.data_test = pd.read_csv(file_name_test)
-        self.vectorizer = vectorizer
-        self.classifier = classifier
+        self.pipeline = Pipeline([
+            ('vec', vectorizer),
+            ('cls', classifier)
+        ]
+        )
         self.result = pd.DataFrame()
         self.field = field
         self.y_field = y_field
 
     def preprocess(self, df):
         df["y"] = LabelEncoder().fit_transform(df.target)
-
         return df
 
     def learn(self):
-        self.data_learn = self.preprocess(self.data_learn)
+        # self.data_learn = self.preprocess(self.data_learn)
 
-        x = self.vectorizer.fit_transform(self.data_learn[self.field])
-        logger.debug("#n_features: {}".format(len(self.vectorizer.vocabulary_)))
+        # x = self.vectorizer.fit_transform(self.data_learn[self.field])
 
-        # x_pos = self.vectorizer.fit_transform(self.data_learn[self.data_learn.y == 1][self.field])
-        # x_neg = self.vectorizer.fit_transform(self.data_learn[self.data_learn.y == 0][self.field])
+        #
+        # y = self.data_learn['y']
+        # self.classifier.fit(x, y)
 
-        y = self.data_learn['y']
-        self.classifier.fit(x, y)
-        logger.debug("learning done")
+        self.pipeline.fit(self.data_learn[self.field],
+                                    self.data_learn[self.y_field])
+        n_features = len(self.pipeline.named_steps['vec'].vocabulary_)
+        logger.debug(f"learning done.features:{n_features}")
 
     def predict(self):
-        self.data_test = self.preprocess(self.data_test)
-        x = self.vectorizer.transform(self.data_test[self.field])
-        y = self.classifier.predict(x)
+        # self.data_test = self.preprocess(self.data_test)
+        # x = self.vectorizer.transform(self.data_test[self.field])
+        # y = self.classifier.predict(x)
+        y = self.pipeline.predict(self.data_test[self.field])
 
         self.result = pd.DataFrame(
             {
-                self.y_field: y,
+                'y_pred': y,
                 self.field: self.data_test[self.field].apply(
-                    lambda x: x.split('\n')[0])},
+                    lambda x: x.split('\n')[0]),
+                # 'y_true': self.data_test['y'],
+                'y_true': self.data_test[self.y_field]},
             index=self.data_test.index
         )
         logger.debug("#predictions:{}".format(len(self.result)))
@@ -100,13 +74,36 @@ class Classifier:
         self.learn()
         self.predict()
 
-    def cross_validate(self):
+    def estimate(self, y_true, y_pred):
         pass
+
+    def cross_validate(self):
+        n_classes = 2
+        t = time()
+        cv = StratifiedKFold(n_splits=2, shuffle=True)
+        # cv = StratifiedShuffleSplit(n_splits=3,test_size=0.1)
+        cms = np.ndarray((cv.n_splits, n_classes * n_classes), int)
+        for i, (train, test) in zip(range(cv.n_splits),
+                                    cv.split(self.data_learn, self.data_learn[self.y_field])):
+            self.pipeline.fit(self.data_learn[self.field].iloc[train],
+                              self.data_learn.iloc[train][self.y_field])
+            y_pred = self.pipeline.predict(self.data_learn[self.field].iloc[test])
+            cm = confusion_matrix(self.data_learn.iloc[test][self.y_field], y_pred)
+            logger.debug(cm)
+            logger.debug(f"precision: {precision_score(self.data_learn.iloc[test][self.y_field], y_pred)}",
+                         f"recall: {recall_score(self.data_learn.iloc[test][self.y_field], y_pred)}",
+                         f"accuracy: {accuracy_score(self.data_learn.iloc[test][self.y_field], y_pred)}")
+
+            logger.debug(classification_report(self.data_learn.iloc[test][self.y_field], y_pred))
+            cms[i] = cm.flatten()
+        avg_cms = cms.mean(axis=0).reshape((n_classes, n_classes)).astype(int)
+        logger.debug('average confusion matrix:\n{}'.format(avg_cms))
+        logger.debug('estimation finished. Elapsed: {}'.format(time() - t))
 
     @property
     def vectorizer_name(self):
-        r = self.vectorizer.get_params(deep=False)
-        return dict(name=settings.vectorizer_names[self.vectorizer],
+        r = self.pipeline.named_steps['vec'].get_params(deep=False)
+        return dict(name=settings.vectorizer_names[self.pipeline.named_steps['vec']],
                     analyzer=r["analyzer"], ngram_range=str(r["ngram_range"]),
                     tokenizer=str(r["tokenizer"]),
                     preprocessor=str(r["preprocessor"]))
