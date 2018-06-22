@@ -5,7 +5,7 @@ mill classifier implementation in python
 from collections import OrderedDict
 import pandas as pd
 import json
-import settings
+import conf
 import logging
 from time import time
 from sklearn.metrics import classification_report, confusion_matrix, precision_score,accuracy_score,recall_score
@@ -90,20 +90,20 @@ class Classifier:
             y_pred = self.pipeline.predict(self.data_learn[self.field].iloc[test])
             cm = confusion_matrix(self.data_learn.iloc[test][self.y_field], y_pred)
             logger.debug(cm)
-            logger.debug(f"precision: {precision_score(self.data_learn.iloc[test][self.y_field], y_pred)}",
-                         f"recall: {recall_score(self.data_learn.iloc[test][self.y_field], y_pred)}",
-                         f"accuracy: {accuracy_score(self.data_learn.iloc[test][self.y_field], y_pred)}")
+            # logger.debug(f"precision: {precision_score(self.data_learn.iloc[test][self.y_field], y_pred)}",
+            #              f"recall: {recall_score(self.data_learn.iloc[test][self.y_field], y_pred)}",
+            #              f"accuracy: {accuracy_score(self.data_learn.iloc[test][self.y_field], y_pred)}")
 
             logger.debug(classification_report(self.data_learn.iloc[test][self.y_field], y_pred))
-            cms[i] = cm.flatten()
-        avg_cms = cms.mean(axis=0).reshape((n_classes, n_classes)).astype(int)
-        logger.debug('average confusion matrix:\n{}'.format(avg_cms))
+            # cms[i] = cm.flatten()
+        # avg_cms = cms.mean(axis=0).reshape((n_classes, n_classes)).astype(int)
+        # logger.debug('average confusion matrix:\n{}'.format(avg_cms))
         logger.debug('estimation finished. Elapsed: {}'.format(time() - t))
 
     @property
     def vectorizer_name(self):
         r = self.pipeline.named_steps['vec'].get_params(deep=False)
-        return dict(name=settings.vectorizer_names[self.pipeline.named_steps['vec']],
+        return dict(name=conf.vectorizer_names[self.pipeline.named_steps['vec']],
                     analyzer=r["analyzer"], ngram_range=str(r["ngram_range"]),
                     tokenizer=str(r["tokenizer"]),
                     preprocessor=str(r["preprocessor"]))
